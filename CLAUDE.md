@@ -33,6 +33,26 @@ Hackathon challenge: https://github.com/carmatthews/claude-code-hackathon/blob/m
 - Use Task subagents for parallel seam analysis (The Scouts waypoint)
 - Pass scope explicitly in each Task prompt — subagents don't inherit coordinator context
 
+### Parallel Fan-Out Pattern (used in this project)
+
+Waypoints 3, 4, and 5 were executed as three independent agents in a single fan-out, then Waypoint 6 as a follow-on agent after the Cut completed:
+
+```
+Coordinator
+├── Agent A → Waypoint 3: The Map  (docs/adr/001-decomposition-strategy.md)
+├── Agent B → Waypoint 4: The Pin  (tests/characterization/)               ← parallel
+└── Agent C → Waypoint 5: The Cut  (services/album-catalog/)
+
+# After all three complete:
+└── Agent D → Waypoint 6: The Fence (services/album-catalog/fence.py + tests/contract/test_fence.py)
+```
+
+Wall-clock time ≈ slowest single agent, not sum of all three. Each agent prompt included:
+- Full file paths to read (legacy source, prior docs)
+- Explicit output location
+- The specific legacy quirks (LB-1 through LB-8) relevant to that agent's task
+- No assumption that the agent had read any prior conversation
+
 ## Hook
 
 A `PreToolUse` hook in `.claude/settings.json` blocks writes to `legacy/` after characterization tests exist. Set `CLAUDE_LEGACY_WRITE_ALLOWED=1` to override intentionally.
