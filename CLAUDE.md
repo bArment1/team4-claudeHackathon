@@ -6,16 +6,16 @@ This is a code modernization hackathon project. We are evolving a legacy monolit
 
 Hackathon challenge: https://github.com/carmatthews/claude-code-hackathon/blob/main/01-code-modernization.md
 
-## Key Decisions (update as resolved)
+## Key Decisions (locked)
 
-- [ ] Legacy flavor (PHP 5 / Node callbacks / Java 2010 / stored procs)
-- [ ] Business domain (inventory/factory vs Northwind Logistics)
-- [ ] Target architecture (strangler fig / event-driven / API facade)
-- [ ] Waypoints to pursue (see docs/planning.md)
+- [x] **Legacy flavor:** Spring Music (Spring Boot Java) — already in `legacy/`
+- [x] **Business domain:** Music albums — title, artist, genre, track count, price
+- [x] **Target architecture:** Strangler fig + API facade — extract Album Catalog service alongside the running monolith
+- [x] **Waypoints:** #1 Stories, #3 Map, #4 Pin, #5 Cut — stretch: #6 Fence
 
 ## Directory Layout
 
-- `legacy/` — the generated monolith; treat as read-only once characterization tests pass
+- `legacy/` — Spring Music monolith; treat as read-only once characterization tests pass
 - `services/` — extracted services with clean API contracts
 - `tests/` — characterization tests (pinning) and contract tests
 - `docs/` — ADRs, planning notes, runbooks
