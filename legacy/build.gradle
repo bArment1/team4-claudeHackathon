@@ -17,6 +17,9 @@ buildscript {
 
 apply plugin: 'java'
 
+sourceCompatibility = 11
+targetCompatibility = 11
+
 apply plugin: 'eclipse-wtp'
 apply plugin: 'idea'
 
@@ -69,4 +72,8 @@ dependencies {
 
 jar {
     archiveBaseName = "spring-music"
+}
+
+test {
+    useJUnitPlatform()
 }

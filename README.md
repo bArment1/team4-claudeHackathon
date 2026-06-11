@@ -91,6 +91,9 @@ pytest ../../tests/contract/ -v
 ```bash
 cd legacy
 ./gradlew test --tests "org.cloudfoundry.samples.music.characterization.*"
+# Requires Java 11+. Tests live in legacy/src/test/java/org/cloudfoundry/samples/music/characterization/
+# To run the full test suite (including the original ApplicationTests):
+./gradlew test
 ```
 
 ## Key Decisions

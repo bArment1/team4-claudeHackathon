@@ -5,6 +5,9 @@ Run with:
     uvicorn main:app --reload
 """
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+import os
 
 from routers.albums import router as albums_router
 from routers.legacy_compat import router as legacy_compat_router
@@ -29,3 +32,8 @@ app.include_router(legacy_compat_router)
 def health() -> dict:
     """Liveness probe."""
     return {"status": "ok", "service": "album-catalog"}
+
+
+@app.get("/", include_in_schema=False)
+def serve_ui():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "static", "index.html"))

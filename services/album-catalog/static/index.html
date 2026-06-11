@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Album Catalog</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --border: #2a2d3e;
+  --accent: #6c63ff;
+  --accent-hover: #5a52e0;
+  --green: #00d4aa;
+  --red: #ff6b6b;
+  --yellow: #ffd93d;
+  --text: #e8eaf0;
+  --muted: #8b8fa8;
+  --font: 'Segoe UI', system-ui, sans-serif;
+}
+
+body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+/* ── Header ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; }
+.logo-badge {
+  background: var(--accent); color: #fff;
+  padding: 3px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+}
+.header-actions { display: flex; gap: 10px; align-items: center; }
+
+/* ── Toolbar ── */
+.toolbar {
+  padding: 20px 32px;
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.toolbar input, .toolbar select {
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 14px; border-radius: 8px;
+  font-size: 0.9rem; font-family: var(--font);
+  outline: none; transition: border-color 0.2s;
+}
+.toolbar input { width: 260px; }
+.toolbar input:focus, .toolbar select:focus { border-color: var(--accent); }
+.toolbar select option { background: var(--surface); }
+.sep { flex: 1; }
+.count { font-size: 0.85rem; color: var(--muted); }
+
+/* ── Buttons ── */
+.btn {
+  padding: 8px 18px; border-radius: 8px; border: none;
+  font-size: 0.88rem; font-weight: 600; cursor: pointer;
+  font-family: var(--font); transition: background 0.15s, opacity 0.15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+.btn-danger { background: transparent; color: var(--red); border: 1px solid transparent; }
+.btn-danger:hover { background: #ff6b6b18; border-color: var(--red); }
+.btn-sm { padding: 5px 12px; font-size: 0.8rem; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Grid ── */
+.main { padding: 28px 32px; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+/* ── Album Card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+  transition: border-color 0.2s, transform 0.15s;
+  position: relative;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card-genre {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--green);
+}
+.card-title { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+.card-artist { font-size: 0.88rem; color: var(--muted); }
+.card-meta { display: flex; gap: 12px; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+.card-actions {
+  display: flex; gap: 8px; margin-top: 8px;
+  border-top: 1px solid var(--border); padding-top: 12px;
+}
+.card-id { font-size: 0.68rem; color: var(--border); font-family: monospace; margin-top: 2px; word-break: break-all; }
+
+/* ── Empty state ── */
+.empty {
+  grid-column: 1/-1; text-align: center; padding: 80px 20px;
+  color: var(--muted);
+}
+.empty svg { margin-bottom: 16px; opacity: 0.3; }
+.empty p { font-size: 1rem; }
+
+/* ── Modal ── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 32px; width: 420px; max-width: 95vw;
+  transform: translateY(20px); transition: transform 0.2s;
+}
+.overlay.open .modal { transform: translateY(0); }
+.modal h2 { font-size: 1.2rem; margin-bottom: 22px; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.field label { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+.field input, .field select {
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 14px; border-radius: 8px;
+  font-size: 0.9rem; font-family: var(--font); outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field .hint { font-size: 0.75rem; color: var(--muted); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+.error-msg { color: var(--red); font-size: 0.82rem; margin-top: -10px; margin-bottom: 8px; display: none; }
+
+/* ── Toast ── */
+.toasts {
+  position: fixed; bottom: 24px; right: 24px;
+  display: flex; flex-direction: column; gap: 10px; z-index: 200;
+}
+.toast {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 18px;
+  font-size: 0.88rem; min-width: 220px;
+  display: flex; align-items: center; gap: 10px;
+  animation: slideIn 0.25s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.toast.success { border-color: var(--green); }
+.toast.error   { border-color: var(--red); }
+.toast .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.toast.success .dot { background: var(--green); }
+.toast.error   .dot { background: var(--red); }
+@keyframes slideIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+
+/* ── Skeleton ── */
+.skeleton { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.skel-line { background: var(--surface2); border-radius: 4px; margin-bottom: 10px; animation: pulse 1.4s ease infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── Delete confirm ── */
+.confirm-modal { max-width: 360px; text-align: center; }
+.confirm-modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 22px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span>Album Catalog</span>
+    <span class="logo-badge">New Service</span>
+  </div>
+  <div class="header-actions">
+    <a href="/docs" target="_blank" class="btn btn-ghost btn-sm">API Docs ↗</a>
+    <button class="btn btn-primary btn-sm" onclick="openAdd()">+ Add Album</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Search title or artist…" oninput="applyFilters()">
+  <select id="genreFilter" onchange="loadAlbums()">
+    <option value="">All Genres</option>
+  </select>
+  <select id="sortField" onchange="applyFilters()">
+    <option value="title">Sort: Title</option>
+    <option value="artist">Sort: Artist</option>
+    <option value="genre">Sort: Genre</option>
+  </select>
+  <div class="sep"></div>
+  <span class="count" id="countLabel"></span>
+</div>
+
+<main class="main">
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- Add / Edit Modal -->
+<div class="overlay" id="formOverlay" onclick="closeIfBackdrop(event)">
+  <div class="modal">
+    <h2 id="formTitle">Add Album</h2>
+    <input type="hidden" id="editId">
+    <div class="field">
+      <label>Title <span style="color:var(--red)">*</span></label>
+      <input type="text" id="fTitle" placeholder="e.g. Kind of Blue">
+    </div>
+    <div class="field">
+      <label>Artist <span style="color:var(--red)">*</span></label>
+      <input type="text" id="fArtist" placeholder="e.g. Miles Davis">
+    </div>
+    <div class="field">
+      <label>Genre <span style="color:var(--red)">*</span></label>
+      <input type="text" id="fGenre" placeholder="e.g. Jazz">
+    </div>
+    <div class="field">
+      <label>Track Count</label>
+      <input type="number" id="fTrackCount" placeholder="Optional" min="0">
+    </div>
+    <div class="field">
+      <label>Price</label>
+      <input type="number" id="fPrice" placeholder="Optional" min="0" step="0.01">
+    </div>
+    <div class="error-msg" id="formError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeForm()">Cancel</button>
+      <button class="btn btn-primary" id="formSubmit" onclick="submitForm()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="overlay" id="deleteOverlay" onclick="closeIfBackdrop(event)">
+  <div class="modal confirm-modal">
+    <h2>Delete album?</h2>
+    <p id="deleteMsg">This cannot be undone.</p>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-ghost" onclick="closeDelete()">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+const API = '/api/albums';
+let allAlbums = [];
+let deleteTargetId = null;
+
+// ── Fetch & render ────────────────────────────────────────────────
+async function loadAlbums() {
+  const genre = document.getElementById('genreFilter').value;
+  const url = genre ? `${API}?genre=${encodeURIComponent(genre)}` : API;
+  showSkeletons();
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to load albums');
+    allAlbums = await res.json();
+    populateGenres();
+    applyFilters();
+  } catch (e) {
+    toast('Failed to load albums', 'error');
+    document.getElementById('grid').innerHTML = `<div class="empty"><p>Could not connect to the Album Catalog service.</p></div>`;
+  }
+}
+
+function populateGenres() {
+  const sel = document.getElementById('genreFilter');
+  const current = sel.value;
+  const genres = [...new Set(allAlbums.map(a => a.genre))].sort();
+  sel.innerHTML = '<option value="">All Genres</option>' +
+    genres.map(g => `<option value="${g}"${g===current?' selected':''}>${g}</option>`).join('');
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const sort = document.getElementById('sortField').value;
+  let list = allAlbums.filter(a =>
+    !q || a.title.toLowerCase().includes(q) || a.artist.toLowerCase().includes(q)
+  );
+  list = [...list].sort((a, b) => (a[sort] || '').localeCompare(b[sort] || ''));
+  render(list);
+}
+
+function render(albums) {
+  const grid = document.getElementById('grid');
+  document.getElementById('countLabel').textContent = `${albums.length} album${albums.length !== 1 ? 's' : ''}`;
+  if (!albums.length) {
+    grid.innerHTML = `<div class="empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+      <p>No albums found</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = albums.map(a => `
+    <div class="card" id="card-${a.id}">
+      <div class="card-genre">${esc(a.genre)}</div>
+      <div class="card-title">${esc(a.title)}</div>
+      <div class="card-artist">${esc(a.artist)}</div>
+      <div class="card-meta">
+        ${a.track_count != null ? `<span>${a.track_count} tracks</span>` : ''}
+        ${a.price != null ? `<span>$${Number(a.price).toFixed(2)}</span>` : ''}
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="openEdit(${JSON.stringify(a).replace(/"/g,'&quot;')})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="openDelete('${a.id}','${esc(a.title)}')">Delete</button>
+      </div>
+      <div class="card-id">${a.id}</div>
+    </div>
+  `).join('');
+}
+
+function showSkeletons() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = Array(8).fill(0).map(() => `
+    <div class="skeleton">
+      <div class="skel-line" style="height:12px;width:40%"></div>
+      <div class="skel-line" style="height:18px;width:80%"></div>
+      <div class="skel-line" style="height:14px;width:55%"></div>
+    </div>`).join('');
+}
+
+// ── Add / Edit ────────────────────────────────────────────────────
+function openAdd() {
+  clearForm();
+  document.getElementById('formTitle').textContent = 'Add Album';
+  document.getElementById('formSubmit').textContent = 'Add';
+  document.getElementById('editId').value = '';
+  openOverlay('formOverlay');
+}
+
+function openEdit(album) {
+  clearForm();
+  document.getElementById('formTitle').textContent = 'Edit Album';
+  document.getElementById('formSubmit').textContent = 'Save';
+  document.getElementById('editId').value = album.id;
+  document.getElementById('fTitle').value = album.title || '';
+  document.getElementById('fArtist').value = album.artist || '';
+  document.getElementById('fGenre').value = album.genre || '';
+  document.getElementById('fTrackCount').value = album.track_count != null ? album.track_count : '';
+  document.getElementById('fPrice').value = album.price != null ? album.price : '';
+  openOverlay('formOverlay');
+}
+
+async function submitForm() {
+  const id = document.getElementById('editId').value;
+  const title = document.getElementById('fTitle').value.trim();
+  const artist = document.getElementById('fArtist').value.trim();
+  const genre = document.getElementById('fGenre').value.trim();
+  const trackCount = document.getElementById('fTrackCount').value;
+  const price = document.getElementById('fPrice').value;
+
+  if (!title || !artist || !genre) {
+    showFormError('Title, Artist and Genre are required.');
+    return;
+  }
+
+  const body = { title, artist, genre };
+  if (trackCount !== '') body.track_count = parseInt(trackCount);
+  if (price !== '') body.price = parseFloat(price);
+
+  const btn = document.getElementById('formSubmit');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    let res;
+    if (id) {
+      res = await fetch(`${API}/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    } else {
+      res = await fetch(API, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    closeForm();
+    toast(id ? 'Album updated' : 'Album added', 'success');
+    await loadAlbums();
+  } catch (e) {
+    showFormError(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = id ? 'Save' : 'Add';
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────────────
+function openDelete(id, title) {
+  deleteTargetId = id;
+  document.getElementById('deleteMsg').textContent = `"${title}" will be permanently removed.`;
+  openOverlay('deleteOverlay');
+}
+
+async function confirmDelete() {
+  if (!deleteTargetId) return;
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API}/${deleteTargetId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    closeDelete();
+    toast('Album deleted', 'success');
+    await loadAlbums();
+  } catch (e) {
+    toast('Delete failed: ' + e.message, 'error');
+    closeDelete();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Modal helpers ─────────────────────────────────────────────────
+function openOverlay(id) { document.getElementById(id).classList.add('open'); }
+function closeForm()   { document.getElementById('formOverlay').classList.remove('open'); }
+function closeDelete() { document.getElementById('deleteOverlay').classList.remove('open'); deleteTargetId = null; }
+function clearForm() {
+  ['fTitle','fArtist','fGenre','fTrackCount','fPrice'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('formError').style.display = 'none';
+}
+function showFormError(msg) {
+  const el = document.getElementById('formError');
+  el.textContent = msg; el.style.display = 'block';
+}
+function closeIfBackdrop(e) {
+  if (e.target.classList.contains('overlay')) {
+    e.target.classList.remove('open');
+    deleteTargetId = null;
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<div class="dot"></div><span>${esc(msg)}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Keyboard ─────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeForm(); closeDelete(); }
+  if (e.key === 'Enter' && document.getElementById('formOverlay').classList.contains('open')) submitForm();
+});
+
+loadAlbums();
+</script>
+</body>
+</html>
